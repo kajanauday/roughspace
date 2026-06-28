@@ -18,6 +18,7 @@ Optional (override hardcoded defaults):
 import json
 import os
 import re
+import time
 
 from dotenv import load_dotenv
 from langfuse import Langfuse
@@ -112,6 +113,37 @@ Scoring guide:
   human_feedback    — convert the user's 1-10 rating to 0-100 (rating × 10)"""
 
 
+# ── GPT-4o pricing (Azure, per token) ────────────────────────────────────────
+_COST_INPUT  = 2.50  / 1_000_000   # $ per input token
+_COST_OUTPUT = 10.00 / 1_000_000   # $ per output token
+
+def _build_metrics(agent_name: str, usage, latency_ms: int,
+                   input_messages: list = None, output_text: str = "") -> dict:
+    pt = getattr(usage, "prompt_tokens", 0) or 0
+    ct = getattr(usage, "completion_tokens", 0) or 0
+    cost = round(pt * _COST_INPUT + ct * _COST_OUTPUT, 8)
+    # Serialise the messages list to a readable string
+    input_text = ""
+    if input_messages:
+        parts = []
+        for m in input_messages:
+            role = m.get("role", "")
+            content = m.get("content", "")
+            parts.append(f"[{role.upper()}]\n{content}")
+        input_text = "\n\n".join(parts)
+    return {
+        "agent_name":         agent_name,
+        "model":              AZURE_DEPLOYMENT,
+        "prompt_tokens":      pt,
+        "completion_tokens":  ct,
+        "total_tokens":       pt + ct,
+        "latency_ms":         latency_ms,
+        "cost_usd":           cost,
+        "input_text":         input_text,
+        "output_text":        output_text,
+    }
+
+
 # ── Agents ────────────────────────────────────────────────────────────────────
 
 @observe(name="agent1-collect-inputs")
@@ -152,24 +184,21 @@ def agent1_collect_inputs() -> dict:
 
 
 @observe(name="agent2-create-plan")
-def agent2_create_plan(trip_data: dict) -> str:
-    """Generates a detailed day-by-day travel itinerary."""
-    print("\n" + "=" * 60)
-    print("  AGENT-2 — Detailed Itinerary Generator")
-    print("=" * 60 + "\n")
-
+def agent2_create_plan(trip_data: dict):
+    """Generates a detailed day-by-day travel itinerary. Returns (plan, metrics)."""
     prompt = f"Create a detailed travel plan for this trip:\n{json.dumps(trip_data, indent=2)}"
-    plan = client.chat.completions.create(
-        model=AZURE_DEPLOYMENT,
-        max_tokens=4096,
-        messages=[
-            {"role": "system", "content": AGENT2_SYSTEM},
-            {"role": "user", "content": prompt},
-        ],
-        name="agent2-generate-plan",
-    ).choices[0].message.content
-    print(plan + "\n")
-    return plan
+    messages = [
+        {"role": "system", "content": AGENT2_SYSTEM},
+        {"role": "user",   "content": prompt},
+    ]
+    t0 = time.time()
+    resp = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT, max_tokens=4096, messages=messages, name="agent2-generate-plan",
+    )
+    latency_ms = int((time.time() - t0) * 1000)
+    plan = resp.choices[0].message.content
+    metrics = _build_metrics("agent2", resp.usage, latency_ms, messages, plan)
+    return plan, metrics
 
 
 def get_human_feedback() -> dict:
@@ -193,28 +222,26 @@ def get_human_feedback() -> dict:
 
 
 @observe(name="judge-evaluate")
-def judge_evaluate(trip_data: dict, plan: str, feedback: dict) -> dict:
-    """Scores the travel plan on 6 metrics and returns a scores dict."""
-    print("\n" + "=" * 60)
-    print("  JUDGE — Evaluating Travel Plan")
-    print("=" * 60 + "\n")
-
-    prompt = (
+def judge_evaluate(trip_data: dict, plan: str, feedback: dict):
+    """Scores the travel plan on 6 metrics. Returns (scores, metrics)."""
+    user_prompt = (
         f"Trip Requirements:\n{json.dumps(trip_data, indent=2)}\n\n"
         f"Generated Plan:\n{plan}\n\n"
         f"Human Feedback:\nRating: {feedback['rating']}/10\nComments: {feedback['comments']}"
     )
-    raw = client.chat.completions.create(
-        model=AZURE_DEPLOYMENT,
-        max_tokens=512,
-        messages=[
-            {"role": "system", "content": JUDGE_SYSTEM},
-            {"role": "user", "content": prompt},
-        ],
-        name="judge-score",
-    ).choices[0].message.content
+    messages = [
+        {"role": "system", "content": JUDGE_SYSTEM},
+        {"role": "user",   "content": user_prompt},
+    ]
+    t0 = time.time()
+    resp = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT, max_tokens=512, messages=messages, name="judge-score",
+    )
+    latency_ms = int((time.time() - t0) * 1000)
+    raw = resp.choices[0].message.content
+    metrics = _build_metrics("judge", resp.usage, latency_ms, messages, raw)
 
     match = re.search(r'\{.*\}', raw, re.DOTALL)
     scores = json.loads(match.group()) if match else {}
     scores["human_feedback"] = feedback["score"]
-    return scores
+    return scores, metrics

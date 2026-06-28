@@ -19,11 +19,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langfuse import observe
 
-from agents import agent2_create_plan, judge_evaluate, langfuse, client, AZURE_DEPLOYMENT, AGENT1_SYSTEM
-from db import init_db, save_to_db, get_db
+from agents import agent2_create_plan, judge_evaluate, langfuse, client, AZURE_DEPLOYMENT, AGENT1_SYSTEM, _build_metrics
+from db import init_db, save_to_db, save_llm_metrics, get_db
 from grafana import push_records
+from langfuse_db import sync_langfuse_to_db
+import threading
 
-_sessions: dict = {}
+_sessions: dict = {}   # sid → {history, trip_data, plan, llm_metrics}
 
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
@@ -45,7 +47,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -65,6 +67,46 @@ def get_evaluations():
     """)
     cols = [d[0] for d in cur.description]
     rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    cur.close(); conn.close()
+    from decimal import Decimal
+    for r in rows:
+        for k, v in r.items():
+            if hasattr(v, "isoformat"):
+                r[k] = v.isoformat()
+            elif isinstance(v, Decimal):
+                r[k] = float(v)
+    return JSONResponse(rows)
+
+
+# ── API: read-only SQL proxy for Grafana ──────────────────────────────────────
+
+class QueryRequest(BaseModel):
+    query: str
+    refId: Optional[str] = "A"
+
+@app.post("/api/query")
+def run_query(req: QueryRequest):
+    """Read-only SQL proxy — Grafana Infinity plugin can POST queries here."""
+    q = req.query.strip().rstrip(";")
+    # Reject any non-SELECT statements
+    if not q.upper().startswith("SELECT"):
+        return JSONResponse({"error": "Only SELECT queries are allowed"}, status_code=400)
+    # Block destructive keywords (word-boundary match to avoid false positives like created_at)
+    import re as _re
+    forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "TRUNCATE", "ALTER", "CREATE", "GRANT"]
+    upper_q = q.upper()
+    for kw in forbidden:
+        if _re.search(r'\b' + kw + r'\b', upper_q):
+            return JSONResponse({"error": f"Keyword {kw} not permitted"}, status_code=400)
+    conn = get_db()
+    cur  = conn.cursor()
+    try:
+        cur.execute(q)
+        cols = [d[0] for d in cur.description]
+        rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    except Exception as e:
+        cur.close(); conn.close()
+        return JSONResponse({"error": str(e)}, status_code=500)
     cur.close(); conn.close()
     from decimal import Decimal
     for r in rows:
@@ -249,13 +291,19 @@ def md_to_html(md: str) -> str:
 
 # ── Agent-1 chat (one LLM turn) ───────────────────────────────────────────────
 
+import time as _time
+
 @observe(name="agent1-chat-turn")
-def agent1_turn(history: list) -> str:
-    return client.chat.completions.create(
-        model=AZURE_DEPLOYMENT,
-        messages=[{"role": "system", "content": AGENT1_SYSTEM}] + history,
-        name="agent1-chat",
-    ).choices[0].message.content
+def agent1_turn(history: list):
+    """Returns (message_content, metrics_dict)."""
+    messages = [{"role": "system", "content": AGENT1_SYSTEM}] + history
+    t0 = _time.time()
+    resp = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT, messages=messages, name="agent1-chat",
+    )
+    latency_ms = int((_time.time() - t0) * 1000)
+    output = resp.choices[0].message.content
+    return output, _build_metrics("agent1", resp.usage, latency_ms, messages, output)
 
 
 # ── API: chat ─────────────────────────────────────────────────────────────────
@@ -266,7 +314,7 @@ def chat_endpoint(req: ChatRequest):
 
     if not sid:
         sid = str(uuid.uuid4())
-        _sessions[sid] = {"history": [], "trip_data": None, "plan": None}
+        _sessions[sid] = {"history": [], "trip_data": None, "plan": None, "llm_metrics": []}
         _sessions[sid]["history"].append({"role": "user", "content": "Hi, I want to plan a trip."})
     else:
         if sid not in _sessions:
@@ -274,8 +322,9 @@ def chat_endpoint(req: ChatRequest):
         if req.message.strip():
             _sessions[sid]["history"].append({"role": "user", "content": req.message.strip()})
 
-    raw = agent1_turn(_sessions[sid]["history"])
+    raw, turn_metrics = agent1_turn(_sessions[sid]["history"])
     _sessions[sid]["history"].append({"role": "assistant", "content": raw})
+    _sessions[sid]["llm_metrics"].append(turn_metrics)
 
     # Check for completion JSON block
     complete = False
@@ -483,7 +532,9 @@ def generate_api(sid: str):
     if not session or not session.get("trip_data"):
         return JSONResponse({"error": "session not found"}, status_code=404)
     if not session.get("plan"):
-        session["plan"] = agent2_create_plan(session["trip_data"])
+        plan, agent2_metrics = agent2_create_plan(session["trip_data"])
+        session["plan"] = plan
+        session["llm_metrics"].append(agent2_metrics)
     return JSONResponse({"plan_html": md_to_html(session["plan"])})
 
 
@@ -496,10 +547,14 @@ def feedback_page(sid: str, rating: int = Form(...), comments: str = Form("")):
         return HTMLResponse('<div style="padding:40px;font-family:sans-serif">Session expired. <a href="/">Start over</a></div>')
 
     feedback = {"rating": rating * 2, "score": rating * 20, "comments": comments}
-    scores   = judge_evaluate(session["trip_data"], session["plan"], feedback)
+    scores, judge_metrics = judge_evaluate(session["trip_data"], session["plan"], feedback)
     record   = save_to_db(session["trip_data"], scores)
+    all_llm_metrics = session.get("llm_metrics", []) + [judge_metrics]
+    save_llm_metrics(record["id"], all_llm_metrics)
     push_records([record])
     langfuse.flush()
+    # Pull Langfuse traces into DB in background (doesn't delay the response)
+    threading.Thread(target=sync_langfuse_to_db, args=(record["id"],), daemon=True).start()
     _sessions.pop(sid, None)
 
     metrics = [

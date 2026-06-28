@@ -20,6 +20,36 @@ PG_CONFIG = {
 }
 
 CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS langfuse_traces (
+    id                SERIAL PRIMARY KEY,
+    evaluation_id     INTEGER REFERENCES evaluations(id) ON DELETE CASCADE,
+    trace_id          TEXT,
+    span_name         TEXT,
+    model             TEXT,
+    input_tokens      INTEGER,
+    output_tokens     INTEGER,
+    total_tokens      INTEGER,
+    latency_ms        INTEGER,
+    cost_usd          NUMERIC(12,10),
+    input_text        TEXT,
+    output_text       TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(trace_id, span_name)
+);
+CREATE TABLE IF NOT EXISTS llm_metrics (
+    id                SERIAL PRIMARY KEY,
+    evaluation_id     INTEGER REFERENCES evaluations(id) ON DELETE CASCADE,
+    agent_name        TEXT,
+    model             TEXT,
+    prompt_tokens     INTEGER,
+    completion_tokens INTEGER,
+    total_tokens      INTEGER,
+    latency_ms        INTEGER,
+    cost_usd          NUMERIC(10,8),
+    input_text        TEXT,
+    output_text       TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS evaluations (
     id               SERIAL PRIMARY KEY,
     destination      TEXT,
@@ -93,6 +123,26 @@ def save_to_db(trip_data: dict, scores: dict):
     print(f"  [DB] Saved evaluation (id={row_id})")
     row["id"] = row_id
     return row
+
+
+def save_llm_metrics(evaluation_id: int, metrics_list: list):
+    """Insert one row per agent call into llm_metrics."""
+    if not metrics_list:
+        return
+    conn = get_db()
+    cur  = conn.cursor()
+    for m in metrics_list:
+        cur.execute("""
+            INSERT INTO llm_metrics
+              (evaluation_id, agent_name, model, prompt_tokens, completion_tokens,
+               total_tokens, latency_ms, cost_usd, input_text, output_text)
+            VALUES (%(evaluation_id)s, %(agent_name)s, %(model)s, %(prompt_tokens)s,
+                    %(completion_tokens)s, %(total_tokens)s, %(latency_ms)s, %(cost_usd)s,
+                    %(input_text)s, %(output_text)s)
+        """, {**m, "evaluation_id": evaluation_id})
+    conn.commit()
+    cur.close(); conn.close()
+    print(f"  [DB] Saved {len(metrics_list)} LLM metric rows for eval id={evaluation_id}")
 
 
 def seed_sample_data():

@@ -1,0 +1,473 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Multi-agent travel planner evaluation metrics + LLM performance metrics (Langfuse)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "🎯  Judge Evaluation Metrics",
+      "type": "row"
+    },
+
+    {
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 13,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "<a href=\"http://35.188.136.211:6080\" target=\"_blank\"\n   style=\"display:block;padding:12px 20px;background:#1d4ed8;\n          color:#fff;border-radius:8px;text-align:center;\n          font-weight:bold;text-decoration:none;\">\n  ✈ Open Travel Planner\n</a>\n",
+        "mode": "html"
+      },
+      "pluginVersion": "12.4.3",
+      "title": "Travel Planner App",
+      "type": "text"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "percentChangeColorMode": "standard", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(hallucination), 1) AS \"Avg Hallucination\" FROM evaluations;", "refId": "A" }],
+      "title": "Average Hallucination Score",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true, "sizing": "auto" },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND((AVG(confidence_score) + AVG(accuracy) + AVG(precision_score) + AVG(recall) + AVG(hallucination) + AVG(human_feedback)) / 6, 1) AS \"Overall Score\" FROM evaluations;", "refId": "A" }],
+      "title": "Overall Plan Quality Score",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 9 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "percentChangeColorMode": "standard", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) AS \"Total Evaluations\" FROM evaluations;", "refId": "A" }],
+      "title": "Total Evaluations",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 9 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "percentChangeColorMode": "standard", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(confidence_score), 1) AS \"Avg Confidence\" FROM evaluations;", "refId": "A" }],
+      "title": "Average Confidence Score",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 9 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "percentChangeColorMode": "standard", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showPercentChange": false, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(human_feedback), 1) AS \"Avg Human Feedback\" FROM evaluations;", "refId": "A" }],
+      "title": "Average Human Feedback",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "showValues": false, "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 13 },
+      "id": 6,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" } },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "time_series", "rawQuery": true, "rawSql": "SELECT created_at AS time, confidence_score, accuracy, precision_score, recall, hallucination, human_feedback FROM evaluations ORDER BY created_at;", "refId": "A" }],
+      "title": "Scores Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "purple", "mode": "fixed" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "showValues": false, "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "id": 7,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" } },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "time_series", "rawQuery": true, "rawSql": "SELECT created_at AS time, human_feedback AS \"Human Feedback\" FROM evaluations ORDER BY created_at;", "refId": "A" }],
+      "title": "Human Feedback Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } }, "mappings": [] },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "list", "placement": "right", "showLegend": true }, "pieType": "pie", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "sort": "desc", "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" } },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT journey_type, COUNT(*) AS total FROM evaluations GROUP BY journey_type ORDER BY total DESC;", "refId": "A" }],
+      "title": "Evaluations by Journey Type",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "id": 9,
+      "options": { "displayMode": "gradient", "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false }, "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT destination, ROUND(AVG(confidence_score), 1) AS avg_confidence FROM evaluations GROUP BY destination ORDER BY avg_confidence DESC;", "refId": "A" }],
+      "title": "Confidence Score by Destination",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "mappings": [], "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+      "id": 10,
+      "options": { "displayMode": "gradient", "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false }, "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT 'Confidence' AS metric, ROUND(AVG(confidence_score), 1) AS value FROM evaluations UNION ALL SELECT 'Accuracy', ROUND(AVG(accuracy), 1) FROM evaluations UNION ALL SELECT 'Precision', ROUND(AVG(precision_score), 1) FROM evaluations UNION ALL SELECT 'Recall', ROUND(AVG(recall), 1) FROM evaluations UNION ALL SELECT 'Hallucination', ROUND(AVG(hallucination), 1) FROM evaluations UNION ALL SELECT 'Human Feedback', ROUND(AVG(human_feedback), 1) FROM evaluations;", "refId": "A" }],
+      "title": "Score Comparison (All Metrics)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "footer": { "reducers": [] }, "inspect": false }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 80 }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+      "id": 11,
+      "options": { "cellHeight": "sm", "showHeader": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT destination AS \"Destination\", journey_type AS \"Type\", budget AS \"Budget\", currency AS \"Currency\", num_people AS \"People\", ROUND(budget / num_people, 0) AS \"Per Person\" FROM evaluations ORDER BY created_at DESC;", "refId": "A" }],
+      "title": "Budget vs People",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "footer": { "reducers": [] }, "inspect": false }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 80 }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "id": 12,
+      "options": { "cellHeight": "sm", "showHeader": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT created_at AS \"Time\", destination AS \"Destination\", journey_type AS \"Type\", confidence_score AS \"Confidence\", accuracy AS \"Accuracy\", human_feedback AS \"Human Score\", verdict AS \"Verdict\" FROM evaluations ORDER BY created_at DESC LIMIT 20;", "refId": "A" }],
+      "title": "Latest Evaluations",
+      "type": "table"
+    },
+
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "id": 200,
+      "title": "🤖  LLM Performance Metrics (Langfuse)",
+      "type": "row"
+    },
+
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "green", "mode": "fixed" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }] },
+          "unit": "currencyUSD",
+          "decimals": 6
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 46 },
+      "id": 201,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(SUM(cost_usd)::numeric, 6) AS \"Total Cost (USD)\" FROM langfuse_traces;", "refId": "A" }],
+      "title": "Total API Cost",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "blue", "mode": "fixed" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 46 },
+      "id": 202,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT SUM(total_tokens) AS \"Total Tokens\" FROM langfuse_traces;", "refId": "A" }],
+      "title": "Total Tokens Used",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": 0 }] },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 46 },
+      "id": 203,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(latency_ms)) AS \"Avg Latency (ms)\" FROM langfuse_traces;", "refId": "A" }],
+      "title": "Avg Response Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "purple", "mode": "fixed" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": 0 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 46 },
+      "id": 204,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) AS \"Total LLM Calls\" FROM langfuse_traces;", "refId": "A" }],
+      "title": "Total LLM Calls",
+      "type": "stat"
+    },
+
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } }, "mappings": [] },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 50 },
+      "id": 205,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false }, "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" } },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT span_name AS \"Agent\", SUM(total_tokens) AS \"Tokens\" FROM langfuse_traces GROUP BY span_name ORDER BY \"Tokens\" DESC;", "refId": "A" }],
+      "title": "Token Share by Agent",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 2000 }, { "color": "red", "value": 5000 }] },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 50 },
+      "id": 206,
+      "options": { "displayMode": "gradient", "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false }, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT span_name AS \"Agent\", ROUND(AVG(latency_ms)) AS \"Avg Latency (ms)\" FROM langfuse_traces GROUP BY span_name ORDER BY \"Avg Latency (ms)\" DESC;", "refId": "A" }],
+      "title": "Avg Latency by Agent",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 0.002 }, { "color": "red", "value": 0.005 }] },
+          "unit": "currencyUSD",
+          "decimals": 6
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 50 },
+      "id": 207,
+      "options": { "displayMode": "gradient", "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false }, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false }, "showUnfilled": true, "sizing": "auto", "valueMode": "color" },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "table", "rawQuery": true, "rawSql": "SELECT span_name AS \"Agent\", ROUND(SUM(cost_usd)::numeric, 6) AS \"Total Cost (USD)\" FROM langfuse_traces GROUP BY span_name ORDER BY \"Total Cost (USD)\" DESC;", "refId": "A" }],
+      "title": "Total Cost by Agent",
+      "type": "bargauge"
+    },
+
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "line", "fillOpacity": 15, "gradientMode": "opacity", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 6, "scaleDistribution": { "type": "linear" }, "showPoints": "always", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 },
+      "id": 208,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "multi", "sort": "none" } },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "time_series", "rawQuery": true, "rawSql": "SELECT created_at AS time, input_tokens AS \"Input Tokens\", output_tokens AS \"Output Tokens\", total_tokens AS \"Total Tokens\" FROM langfuse_traces ORDER BY created_at;", "refId": "A" }],
+      "title": "Token Usage Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "green", "mode": "fixed" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "barWidthFactor": 0.6, "drawStyle": "bars", "fillOpacity": 80, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": [],
+          "unit": "currencyUSD",
+          "decimals": 6
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 },
+      "id": 209,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" } },
+      "pluginVersion": "12.4.3",
+      "targets": [{ "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" }, "format": "time_series", "rawQuery": true, "rawSql": "SELECT created_at AS time, cost_usd AS \"Cost (USD)\" FROM langfuse_traces ORDER BY created_at;", "refId": "A" }],
+      "title": "API Cost Over Time",
+      "type": "timeseries"
+    },
+
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "footer": { "reducer": ["sum"], "show": true, "fields": ["Input Tokens", "Output Tokens", "Total Tokens", "Cost (USD)"] },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Latency (ms)" }, "properties": [{ "id": "custom.width", "value": 110 }] },
+          { "matcher": { "id": "byName", "options": "Cost (USD)" }, "properties": [{ "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 6 }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 66 },
+      "id": 210,
+      "options": { "cellHeight": "sm", "showHeader": true },
+      "pluginVersion": "12.4.3",
+      "targets": [{
+        "datasource": { "type": "grafana-postgresql-datasource", "uid": "ffplpkv8geqyob" },
+        "format": "table", "rawQuery": true,
+        "rawSql": "SELECT e.destination AS \"Destination\", lt.span_name AS \"Agent\", lt.model AS \"Model\", lt.input_tokens AS \"Input Tokens\", lt.output_tokens AS \"Output Tokens\", lt.total_tokens AS \"Total Tokens\", lt.latency_ms AS \"Latency (ms)\", ROUND(lt.cost_usd::numeric, 6) AS \"Cost (USD)\" FROM langfuse_traces lt LEFT JOIN evaluations e ON e.id = lt.evaluation_id ORDER BY lt.created_at DESC LIMIT 50;",
+        "refId": "A"
+      }],
+      "title": "Langfuse Trace Detail — All LLM Calls",
+      "type": "table"
+    }
+
+  ],
+  "preload": false,
+  "refresh": "30s",
+  "schemaVersion": 42,
+  "tags": ["travel", "ai", "evaluation", "langfuse"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Travel Planner Evaluation Dashboard",
+  "uid": "ud6qnbb",
+  "version": 3,
+  "weekStart": ""
+}
