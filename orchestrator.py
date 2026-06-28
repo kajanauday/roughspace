@@ -13,7 +13,7 @@ Or from another module:
     result = run_planner_agents()
     insert_current_run_metrics(result)
 """
-from langfuse.decorators import observe
+from langfuse import observe
 
 from agents import (
     agent1_collect_inputs,

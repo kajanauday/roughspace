@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from langfuse import Langfuse
 
 load_dotenv()
-from langfuse.decorators import observe
+from langfuse import observe
 from langfuse.openai import AzureOpenAI
 
 # ── Azure OpenAI config ───────────────────────────────────────────────────────
